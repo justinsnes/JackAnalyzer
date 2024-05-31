@@ -4,6 +4,7 @@ import os
 import xml.etree.ElementTree as ET
 
 from JackTokenizer import JackTokenizer
+from CompilationEngine import CompilationEngine
 
 parser = argparse.ArgumentParser("JackAnalyzer")
 parser.add_argument("jackfilepath", help="The target Jack file/directory to be translated to xml tokens and parsing", type=str)
@@ -24,11 +25,15 @@ else:
 
 for jackFile in jackFiles:
     tokenFilename = JackTokenizer.tokenizeFile(jackFile)
+
+    compEngine = CompilationEngine(tokenFilename)
+    compEngine.CompileClass()
+
     analyzedXmlFile = jackFile.replace(".jack", "_output.xml")
 
-    tokenTree = ET.parse(tokenFilename)
+    tokenTree = ET.ElementTree(compEngine.OutputXML)
     ET.indent(tokenTree, '  ')
     tokenTree.write(analyzedXmlFile)
-        
+
 
 print("End JackAnalyzer")
