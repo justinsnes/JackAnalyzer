@@ -18,6 +18,8 @@ class JackTokenizer:
             for line in file:
                 if line.startswith("//") or line.startswith("/*") or not line.strip():
                     continue
+                if line.find("//") > -1:
+                    line = line.partition("//")[0]
 
                 for element in re.findall(JackReference.regexPattern, line):
                     element = element.replace("\n", "")

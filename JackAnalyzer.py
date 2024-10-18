@@ -13,7 +13,7 @@ args = parser.parse_args()
 targetFilepath = os.path.expanduser(args.jackfilepath)
 print(targetFilepath + " is the target file/directory")
 
-jackFiles = [];
+jackFiles = []
 
 isFolder = os.path.isdir(targetFilepath)
 if isFolder:

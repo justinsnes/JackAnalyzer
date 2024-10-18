@@ -35,33 +35,25 @@ class CompilationEngine:
             elif (element.text.strip() == "{"):
                 subroutineDec = ET.SubElement(self.OutputXML, "subroutineDec")
                 self.CompileSubroutineDec(subroutineDec)
+            elif (element.text.strip() in ["static"]):
+                classVarDec = ET.SubElement(self.OutputXML, "classVarDec")
+                pass
 
         print(element.tag)
         print(element.text)
 
     def CompileSubroutineDec(self, parentContainer):
-        element = self.grabNextElement()
-        functionKeyword = ET.SubElement(parentContainer, element.tag)
-        functionKeyword.text = element.text
+        for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
+            element = self.grabNextElement()
+            nextElement = ET.SubElement(parentContainer, element.tag)
+            nextElement.text = element.text
 
-        element = self.grabNextElement()
-        returntypeKeyword = ET.SubElement(parentContainer, element.tag)
-        returntypeKeyword.text = element.text
-
-        element = self.grabNextElement()
-        subroutineIdentifier = ET.SubElement(parentContainer, element.tag)
-        subroutineIdentifier.text = element.text
-
-        element = self.grabNextElement()
-        leftParenth = ET.SubElement(parentContainer, element.tag)
-        leftParenth.text = element.text
-
-        parameterList = ET.SubElement(parentContainer, "parameterList")
-        parameterList.text = "\n"
-
-        element = self.grabNextElement()
-        rightParenth = ET.SubElement(parentContainer, element.tag)
-        rightParenth.text = element.text
+            if (nextElement.text.strip() == "("):
+                # compile parameter list
+                parameterList = ET.SubElement(parentContainer, "parameterList")
+                parameterList.text = "\n"
+            elif (nextElement.text.strip() == ")"):
+                break
 
         subroutineBody = ET.SubElement(parentContainer, "subroutineBody")
         self.CompileSubroutineBody(subroutineBody)
@@ -108,6 +100,9 @@ class CompilationEngine:
             elif element.text.strip() == "let":
                 letStatement = ET.SubElement(parentContainer, "letStatement")
                 self.CompileStatement(letStatement, element)
+            elif element.text.strip() == "if":
+                ifStatement = ET.SubElement(parentContainer, "ifStatement")
+                self.CompileStatement(ifStatement, element)
             elif element.text.strip() == "while":
                 whileStatement = ET.SubElement(parentContainer, "whileStatement")
                 self.CompileStatement(whileStatement, element)
