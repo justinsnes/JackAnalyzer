@@ -11,6 +11,10 @@ class CompilationEngine:
         elem = self.TokenFileItems[self.TokenIndex]
         self.TokenIndex += 1
         return elem
+    
+    def checkNextElement(self):
+        elem = self.TokenFileItems[self.TokenIndex]
+        return elem
 
     def __init__(self, tokenFile):
         tree = ET.parse(tokenFile)
@@ -28,15 +32,19 @@ class CompilationEngine:
 
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
             element = self.grabNextElement()
-            nextElement = ET.SubElement(self.OutputXML, element.tag)
-            nextElement.text = element.text
+            # save function for the subroutine declaration section
+            if (element.text.strip() not in ["function", "static"]):
+                nextElement = ET.SubElement(self.OutputXML, element.tag)
+                nextElement.text = element.text
             if (element.text.strip() == "}"):
                 break
-            elif (element.text.strip() == "{"):
+            elif (element.text.strip() in ["function"]):
+                self.TokenIndex -= 1
                 subroutineDec = ET.SubElement(self.OutputXML, "subroutineDec")
                 self.CompileSubroutineDec(subroutineDec)
             elif (element.text.strip() in ["static"]):
                 classVarDec = ET.SubElement(self.OutputXML, "classVarDec")
+                self.CompileVarDec(classVarDec, element)
                 pass
 
         print(element.tag)
@@ -122,7 +130,11 @@ class CompilationEngine:
             nextElement = ET.SubElement(parentContainer, element.tag)
             nextElement.text = element.text
             if element.text.strip() in [";", "}"]:
-                break
+                # if the next statement is an else, we're still in the if statement
+                if self.checkNextElement().text.strip() == "else":
+                    pass
+                else:
+                    break
             elif keyword.text.strip() == "do" and element.text.strip() == "(":
                 expressionList = ET.SubElement(parentContainer, "expressionList")
                 expression = ET.SubElement(expressionList, "expression")
@@ -138,6 +150,7 @@ class CompilationEngine:
                 # if a left bracket occurs, we're in a statement that can have other statements
                 # such as a while loop
                 statements = ET.SubElement(parentContainer, "statements")
+                statements.text = "\n"
                 self.CompileStatements(statements)
 
 
