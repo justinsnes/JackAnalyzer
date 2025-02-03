@@ -4,7 +4,8 @@ class JackReference:
     def __init__(self):
         pass
 
-    keywords = ["boolean", "class", "do", "else", "function", "if", "int", "let", "return", "static", "var", "void", "while"]
+    keywords = ["boolean", "class", "constructor", "do", "else", "field", "function", "if", "int", "let", "method", "return", "static",
+                "this", "var", "void", "while"]
     symbols = ["{", "}", "(", ")", "[", "]", ";", ",", ".", "+", "-", "/", "=", "<", ">"]
     # get list of elements per line
     regexSymbols = "\\" + "|\\".join(symbols)

@@ -1,4 +1,5 @@
 # Written in Python 3.10.12. Python 3.8+ needed at minimum to use pathlib.Path().unlink with missing_ok
+# The starting file of the program!
 import argparse
 import os
 import xml.etree.ElementTree as ET

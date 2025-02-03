@@ -32,17 +32,18 @@ class CompilationEngine:
 
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
             element = self.grabNextElement()
-            # save function for the subroutine declaration section
-            if (element.text.strip() not in ["function", "static"]):
-                nextElement = ET.SubElement(self.OutputXML, element.tag)
-                nextElement.text = element.text
+            nextElement = ET.SubElement(self.OutputXML, element.tag)
+            nextElement.text = element.text
             if (element.text.strip() == "}"):
                 break
-            elif (element.text.strip() in ["function"]):
+            elif (element.text.strip() in ["constructor", "function", "method"]):
+                self.OutputXML.remove(nextElement)
                 self.TokenIndex -= 1
                 subroutineDec = ET.SubElement(self.OutputXML, "subroutineDec")
                 self.CompileSubroutineDec(subroutineDec)
-            elif (element.text.strip() in ["static"]):
+            elif (element.text.strip() in ["field", "static"]):
+                self.OutputXML.remove(nextElement)
+                self.TokenIndex -= 1
                 classVarDec = ET.SubElement(self.OutputXML, "classVarDec")
                 self.CompileVarDec(classVarDec, element)
                 pass
@@ -60,6 +61,8 @@ class CompilationEngine:
                 # compile parameter list
                 parameterList = ET.SubElement(parentContainer, "parameterList")
                 parameterList.text = "\n"
+                if self.checkNextElement().text.strip() != ")":
+                    self.CompileParameterList(parameterList)
             elif (nextElement.text.strip() == ")"):
                 break
 
@@ -86,15 +89,23 @@ class CompilationEngine:
                 self.CompileStatements(statements)
 
     def CompileVarDec(self, parentContainer, firstKeyword):
-        keywordVar = ET.SubElement(parentContainer, firstKeyword.tag)
-        keywordVar.text = firstKeyword.text
-
+        varKeyword = ET.SubElement(parentContainer, "keyword")
+        varKeyword.text = " var "
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
             element = self.grabNextElement()
             nextElement = ET.SubElement(parentContainer, element.tag)
             nextElement.text = element.text
             if (element.text.strip() == ";"):
                 break
+
+    def CompileParameterList(self, parentContainer):
+        for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
+            element = self.grabNextElement()
+            nextElement = ET.SubElement(parentContainer, element.tag)
+            nextElement.text = element.text
+            if self.checkNextElement().text.strip() == ")":
+                break
+            
 
     def CompileStatements(self, parentContainer):
         # not passing the first keyword for statements so make sure to rewind first
@@ -135,14 +146,15 @@ class CompilationEngine:
                     pass
                 else:
                     break
+            elif keyword.text.strip() == "return" and not element.text.strip() in [JackReference.symbols]:
+                # go back one because we found the beginning of an expression
+                parentContainer.remove(nextElement)
+                self.TokenIndex -= 1
+                expression = ET.SubElement(parentContainer, "expression")
+                self.CompileExpression(expression)
             elif keyword.text.strip() == "do" and element.text.strip() == "(":
                 expressionList = ET.SubElement(parentContainer, "expressionList")
-                expression = ET.SubElement(expressionList, "expression")
-                self.CompileExpression(expression)
-                # if the expression has no elements, just take it out
-                if len(expression.findall("*")) == 0:
-                    expressionList.remove(expression)
-                    expressionList.text = "\n"
+                self.CompileExpressionList(expressionList)
             elif element.text.strip() in ["=", "(", "["]:
                 expression = ET.SubElement(parentContainer, "expression")
                 self.CompileExpression(expression)
@@ -153,12 +165,32 @@ class CompilationEngine:
                 statements.text = "\n"
                 self.CompileStatements(statements)
 
+    def CompileExpressionList(self, parentContainer):
+        for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
+            element = self.grabNextElement()
+            if element.text.strip() == ")":
+                if len(parentContainer.findall("*")) == 0:
+                    parentContainer.text = "\n"
+                self.TokenIndex -= 1
+                break
+            self.TokenIndex -= 1
+            expression = ET.SubElement(parentContainer, "expression")
+            self.CompileExpression(expression)
+            # if the expression has no elements, just take it out
+            if len(expression.findall("*")) == 0:
+                parentContainer.remove(expression)
+                parentContainer.text = "\n"
+            else:
+                element = self.grabNextElement()
+                if element.text.strip() == ")":
+                    self.TokenIndex -= 1
+                    break
 
     def CompileExpression(self, parentContainer):
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
             element = self.grabNextElement()
 
-            if element.text.strip() in [";", ")", "]"]:
+            if element.text.strip() in [";", ")", "]", ","]:
                 self.TokenIndex -= 1
                 break
             elif element.text.strip() in JackReference.symbols:
@@ -181,14 +213,14 @@ class CompilationEngine:
 
             nextElement = ET.SubElement(parentContainer, element.tag)
             nextElement.text = element.text
-            if element.text.strip() == "(":
+            if element.text.strip() in ["("]:
                 expressionList = ET.SubElement(parentContainer, "expressionList")
-                expression = ET.SubElement(expressionList, "expression")
-                self.CompileExpression(expression)
+                self.CompileExpressionList(expressionList)
                 # the inevitable closing parenthesis
                 element = self.grabNextElement()
                 nextElement = ET.SubElement(parentContainer, element.tag)
                 nextElement.text = element.text
+
             elif element.text.strip() == "[":
                 expression = ET.SubElement(parentContainer, "expression")
                 self.CompileExpression(expression)
