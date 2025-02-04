@@ -48,9 +48,6 @@ class CompilationEngine:
                 self.CompileVarDec(classVarDec, element)
                 pass
 
-        print(element.tag)
-        print(element.text)
-
     def CompileSubroutineDec(self, parentContainer):
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
             element = self.grabNextElement()
@@ -78,6 +75,7 @@ class CompilationEngine:
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
             element = self.grabNextElement()
             if (element.text.strip() == "var"):
+                self.TokenIndex -= 1
                 varDec = ET.SubElement(parentContainer, "varDec")
                 self.CompileVarDec(varDec, element)
             elif (element.text.strip() == "}"):
@@ -89,8 +87,6 @@ class CompilationEngine:
                 self.CompileStatements(statements)
 
     def CompileVarDec(self, parentContainer, firstKeyword):
-        varKeyword = ET.SubElement(parentContainer, "keyword")
-        varKeyword.text = " var "
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
             element = self.grabNextElement()
             nextElement = ET.SubElement(parentContainer, element.tag)
@@ -185,6 +181,10 @@ class CompilationEngine:
                 if element.text.strip() == ")":
                     self.TokenIndex -= 1
                     break
+                elif element.text.strip() == ",":
+                    nextElement = ET.SubElement(parentContainer, element.tag)
+                    nextElement.text = element.text
+
 
     def CompileExpression(self, parentContainer):
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
@@ -207,7 +207,7 @@ class CompilationEngine:
             element = self.grabNextElement()
 
             # a closing parenthesis belongs outside of the current term
-            if element.text.strip() in [";", ")", "]", "<", "+", "/"]:
+            if element.text.strip() in [";", ")", "]", "<", "+", "/", ","]:
                 self.TokenIndex -= 1
                 break
 

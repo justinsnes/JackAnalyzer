@@ -11,8 +11,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
             //"args": ["~/Desktop/nand2tetris/projects/10/ExpressionLessSquare"]
-            "args": ["C:/Antroot/nand2tetris/nand2tetris/projects/10/ArrayTest"]
-            //"args": ["C:/AntRoot/nand2tetris/nand2tetris/projects/10/ExpressionLessSquare"]
+            //"args": ["C:/Antroot/nand2tetris/nand2tetris/projects/10/ArrayTest"]
+            "args": ["C:/AntRoot/nand2tetris/nand2tetris/projects/10/ExpressionLessSquare"]
         }
     ]
 }
