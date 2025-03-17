@@ -232,6 +232,14 @@ class CompilationEngine:
             if element.text.strip() in ["("]:
                 isExpressionList = False
                 elementsSearched = 0
+
+                # if this is from an identifier/method name, it's always an expressionList
+                self.TokenIndex -= 2
+                prevElement = self.grabNextElement()
+                element = self.grabNextElement()
+                if prevElement.tag == "identifier":
+                    isExpressionList = True
+                
                 for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
                     lookAheadElement = self.grabNextElement()
                     elementsSearched += 1
