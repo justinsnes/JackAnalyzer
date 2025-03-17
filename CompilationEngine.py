@@ -187,12 +187,19 @@ class CompilationEngine:
 
 
     def CompileExpression(self, parentContainer):
+        tokenCount = 0
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
             element = self.grabNextElement()
+            tokenCount += 1
 
             if element.text.strip() in [";", ")", "]", ","]:
                 self.TokenIndex -= 1
                 break
+            elif element.text.strip() in ["("] or (tokenCount == 1 and element.text.strip() in ["-", "~"]):
+                # if the next element triggered a term, it belongs in the term
+                self.TokenIndex -= 1
+                term = ET.SubElement(parentContainer, "term")
+                self.CompileTerm(term)
             elif element.text.strip() in JackReference.symbols:
                 nextElement = ET.SubElement(parentContainer, element.tag)
                 nextElement.text = element.text
@@ -203,25 +210,49 @@ class CompilationEngine:
                 self.CompileTerm(term)
 
     def CompileTerm(self, parentContainer):
+        tokenCount = 0
         for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
             element = self.grabNextElement()
+            tokenCount += 1
 
             # a closing parenthesis belongs outside of the current term
-            if element.text.strip() in [";", ")", "]", "<", "+", "/", ","]:
+            if tokenCount > 1 and element.text.strip() in [";", ")", "]", "<", ">", "+", "-", "/", "*", ",", "|", "&", "="]:
                 self.TokenIndex -= 1
                 break
 
             nextElement = ET.SubElement(parentContainer, element.tag)
             nextElement.text = element.text
-            if element.text.strip() in ["("]:
-                expressionList = ET.SubElement(parentContainer, "expressionList")
-                self.CompileExpressionList(expressionList)
-                # the inevitable closing parenthesis
-                element = self.grabNextElement()
-                nextElement = ET.SubElement(parentContainer, element.tag)
-                nextElement.text = element.text
 
-            elif element.text.strip() == "[":
+            # a term for a unary op (-, ~) is represented as symbol -> term
+            # Ex: (-j)
+            if (tokenCount <= 1 and element.text.strip() in ["-", "~"]):
+                anotherTerm = ET.SubElement(parentContainer, "term")
+                self.CompileTerm(anotherTerm)
+
+            if element.text.strip() in ["("]:
+                isExpressionList = False
+                elementsSearched = 0
+                for itemIndex in range(self.TokenIndex, len(self.TokenFileItems)):
+                    lookAheadElement = self.grabNextElement()
+                    elementsSearched += 1
+                    if lookAheadElement.text.strip() == "," or (elementsSearched <= 1 and lookAheadElement.text.strip() == ")"):
+                        isExpressionList = True
+                        self.TokenIndex -= elementsSearched
+                        break
+                    elif lookAheadElement.text.strip() == ")":
+                        self.TokenIndex -= elementsSearched
+                        break
+
+                if isExpressionList:
+                    expressionList = ET.SubElement(parentContainer, "expressionList")
+                    self.CompileExpressionList(expressionList)
+                    # the inevitable closing parenthesis
+                    element = self.grabNextElement()
+                    nextElement = ET.SubElement(parentContainer, element.tag)
+                    nextElement.text = element.text
+                    continue
+
+            if element.text.strip() in ["[", "("]:
                 expression = ET.SubElement(parentContainer, "expression")
                 self.CompileExpression(expression)
                 # the inevitable closing bracket
