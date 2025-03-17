@@ -14,9 +14,22 @@ class JackTokenizer:
 
         tokens = ET.Element('tokens')
 
+        withinComment = False
+
         with open(targetJackFile) as file:
             for line in file:
+                # clean up beginning and indentations of line
+                line = line.lstrip()
+
+                # keep going for comment blocks
+                if withinComment:
+                    if line.find("*/") > -1:
+                        withinComment = False
+                    continue
+
                 if line.startswith("//") or line.startswith("/*") or not line.strip():
+                    if line.startswith("/*") and line.find("*/") == -1:
+                        withinComment = True
                     continue
                 if line.find("//") > -1:
                     line = line.partition("//")[0]
